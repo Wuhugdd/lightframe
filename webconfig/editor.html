@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightFrame 自定义模式编辑器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>自定义模式编辑器</h1>
+
+    <div class="card">
+        <h2>JSON 模式定义</h2>
+        <textarea id="json-editor" rows="20" style="width: 100%; font-family: monospace;">
+{
+  "mode_id": "my_custom_mode",
+  "display_name": "我的自定义模式",
+  "cacheable": false,
+  "content": {
+    "type": "text",
+    "text": "Hello LightFrame"
+  },
+  "layout": {
+    "color": "#ffffff"
+  }
+}
+        </textarea>
+    </div>
+
+    <button id="save-btn">保存自定义模式</button>
+    <div id="status"></div>
+
+    <div class="card">
+        <h3>模式说明</h3>
+        <ul>
+            <li><strong>mode_id</strong> - 模式ID，唯一标识符</li>
+            <li><strong>display_name</strong> - 显示名称</li>
+            <li><strong>cacheable</strong> - 是否可缓存（静态内容设为 true）</li>
+            <li><strong>content.type</strong> - 类型：time / spectrum_only / text / computed</li>
+            <li><strong>layout</strong> - 布局配置，根据类型不同</li>
+        </ul>
+    </div>
+
+    <script>
+        document.getElementById('save-btn').onclick = async () => {
+            try {
+                const json = JSON.parse(document.getElementById('json-editor').value.trim());
+                const modeId = json.mode_id;
+
+                // TODO: 后端 API 保存自定义模式
+                document.getElementById('status').textContent = `模式 ${modeId} 保存成功！`;
+                document.getElementById('status').style.color = 'green';
+            } catch (e) {
+                document.getElementById('status').textContent = 'JSON 格式错误: ' + e.message;
+                document.getElementById('status').color = 'red';
+            }
+        };
+    </script>
+</body>
+</html>

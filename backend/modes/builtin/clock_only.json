@@ -1,0 +1,14 @@
+{
+  "mode_id": "CLOCK",
+  "display_name": "纯时钟",
+  "cacheable": true,
+  "content": {
+    "type": "time",
+    "source": "context"
+  },
+  "layout": {
+    "clock_area": "center",
+    "clock_height": 8,
+    "clock_color": "#ffffff"
+  }
+}

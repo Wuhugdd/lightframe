@@ -1,0 +1,16 @@
+{
+  "mode_id": "CLOCK_SPECTRUM",
+  "display_name": "时钟+频谱",
+  "cacheable": false,
+  "content": {
+    "type": "computed",
+    "source": "time+spectrum"
+  },
+  "layout": {
+    "clock_area": "bottom",
+    "clock_height": 8,
+    "spectrum_height": 24,
+    "color_scheme": "rainbow",
+    "clock_color": "#ffffff"
+  }
+}

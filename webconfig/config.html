@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightFrame 设备配置</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>LightFrame 配置</h1>
+
+    <div class="card">
+        <h2>显示模式</h2>
+        <div id="mode-list">
+            <!-- 动态加载 -->
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>亮度设置</h2>
+        <label for="brightness">默认亮度: <span id="brightness-value">80</span></label>
+        <input type="range" id="brightness" min="0" max="100" value="80" class="brightness-slider">
+    </div>
+
+    <div class="card">
+        <h2>功能设置</h2>
+        <label>
+            <input type="checkbox" id="auto-dimming" checked>
+            启用自动亮度调节（光敏传感器）
+        </label>
+        <br>
+        <label>
+            <input type="checkbox" id="spectrum-enabled" checked>
+            启用频谱模式
+        </label>
+    </div>
+
+    <div class="card">
+        <h2>配色方案</h2>
+        <select id="color-scheme">
+            <option value="rainbow">彩虹</option>
+            <option value="fire">火焰</option>
+            <option value="ocean">海洋</option>
+            <option value="purple">紫粉</option>
+            <option value="green">青绿</option>
+        </select>
+    </div>
+
+    <button id="save-btn">保存配置</button>
+    <div id="status"></div>
+
+    <script>
+        const deviceMac = 'TODO'; // 设备 MAC 由配网时注入
+
+        async function loadModes() {
+            const res = await fetch('/api/modes');
+            const data = await res.json();
+            const list = document.getElementById('mode-list');
+            data.modes.forEach(mode => {
+                const div = document.createElement('div');
+                div.className = 'mode-item';
+                div.dataset.modeId = mode.mode_id;
+                div.innerHTML = `<strong>${mode.display_name}</strong><br><small>${mode.mode_id}</small>`;
+                div.onclick = () => selectMode(mode.mode_id);
+                list.appendChild(div);
+            });
+        }
+
+        let selectedModes = [];
+        function selectMode(modeId) {
+            const idx = selectedModes.indexOf(modeId);
+            if (idx >= 0) {
+                selectedModes.splice(idx, 1);
+                document.querySelector(`[data-mode-id="${modeId}"]`).classList.remove('selected');
+            } else {
+                selectedModes.push(modeId);
+                document.querySelector(`[data-mode-id="${modeId}"]`).classList.add('selected');
+            }
+        }
+
+        document.getElementById('brightness').oninput = (e) => {
+            document.getElementById('brightness-value').textContent = e.target.value;
+        };
+
+        document.getElementById('save-btn').onclick = async () => {
+            const config = {
+                active_modes: selectedModes,
+                default_brightness: parseInt(document.getElementById('brightness').value),
+                spectrum_enabled: document.getElementById('spectrum-enabled').checked,
+                auto_dimming: document.getElementById('auto-dimming').checked,
+                color_scheme: document.getElementById('color-scheme').value
+            };
+
+            const res = await fetch(`/api/config/${deviceMac}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(config)
+            });
+
+            const result = await res.json();
+            if (result.success) {
+                document.getElementById('status').textContent = '配置保存成功！';
+                document.getElementById('status').style.color = 'green';
+            } else {
+                document.getElementById('status').textContent = '保存失败，请重试';
+                document.getElementById('status').style.color = 'red';
+            }
+        };
+
+        loadModes();
+    </script>
+</body>
+</html>

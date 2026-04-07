@@ -1,0 +1,12 @@
+{
+  "mode_id": "SPECTRUM",
+  "display_name": "纯频谱",
+  "cacheable": false,
+  "content": {
+    "type": "spectrum_only",
+    "source": "device"
+  },
+  "layout": {
+    "color_scheme": "rainbow"
+  }
+}

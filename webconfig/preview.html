@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightFrame 在线预览</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>LightFrame 在线预览</h1>
+
+    <div class="card">
+        <h2>预览 (8x32)</h2>
+        <div id="preview-grid">
+            <!-- 动态生成 -->
+        </div>
+        <button id="refresh-btn">刷新预览</button>
+    </div>
+
+    <div class="card">
+        <h2>选择模式</h2>
+        <select id="mode-select">
+            <option value="">加载中...</option>
+        </select>
+    </div>
+
+    <script>
+        const WIDTH = 8;
+        const HEIGHT = 32;
+        let pixels = [];
+
+        // 创建预览网格
+        const grid = document.getElementById('preview-grid');
+        for (let y = 0; y < HEIGHT; y++) {
+            for (let x = 0; x < WIDTH; x++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'preview-pixel';
+                pixel.style.background = '#000';
+                grid.appendChild(pixel);
+                pixels.push(pixel);
+            }
+        }
+
+        async function loadModes() {
+            const res = await fetch('/api/modes');
+            const data = await res.json();
+            const select = document.getElementById('mode-select');
+            select.innerHTML = '';
+            data.modes.forEach(mode => {
+                const opt = document.createElement('option');
+                opt.value = mode.mode_id;
+                opt.textContent = `${mode.display_name} (${mode.mode_id})`;
+                select.appendChild(opt);
+            });
+        }
+
+        async function refreshPreview() {
+            const mode = document.getElementById('mode-select').value;
+            if (!mode) return;
+
+            // 这里 mac 用测试地址
+            const res = await fetch(`/api/frame?mac=preview&mode=${mode}`);
+            const buffer = await res.arrayBuffer();
+            const bytes = new Uint8Array(buffer);
+
+            for (let i = 0; i < bytes.length; i += 3) {
+                const r = bytes[i];
+                const g = bytes[i+1];
+                const b = bytes[i+2];
+                pixels[i/3].style.background = `rgb(${r}, ${g}, ${b})`;
+            }
+        }
+
+        document.getElementById('refresh-btn').onclick = refreshPreview;
+
+        loadModes();
+        setInterval(refreshPreview, 100); // 自动刷新
+    </script>
+</body>
+</html>
