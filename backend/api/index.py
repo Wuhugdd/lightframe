@@ -13,11 +13,11 @@ import sys
 # 添加上级目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.core.mode_registry import ModeRegistry
-from backend.core.pipeline import RenderPipeline
-from backend.core.context import Context
-from backend.core.ws2812_renderer import WS2812Renderer
-from backend.core.config_store import ConfigStore
+from core.mode_registry import ModeRegistry
+from core.pipeline import RenderPipeline
+from core.context import Context
+from core.ws2812_renderer import WS2812Renderer
+from core.config_store import ConfigStore
 
 # 加载环境变量
 load_dotenv()
@@ -27,7 +27,7 @@ app = FastAPI(title="LightFrame Backend", version="1.0")
 
 db_path = os.getenv("DATABASE_PATH", "./lightframe.db")
 config_store = ConfigStore(db_path)
-mode_registry = ModeRegistry(modes_dir="./backend/modes")
+mode_registry = ModeRegistry(modes_dir="./modes")
 context = Context()
 renderer = WS2812Renderer(width=8, height=32)
 pipeline = RenderPipeline(mode_registry, context, renderer, config_store)

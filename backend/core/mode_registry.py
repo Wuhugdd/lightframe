@@ -5,7 +5,7 @@ mode_registry.py
 
 import json
 import os
-from typing import Dict, List, Dict
+from typing import Dict, List, Optional
 from pathlib import Path
 
 
@@ -50,7 +50,7 @@ class ModeRegistry:
         except Exception as e:
             print(f"Error loading {file_path}: {e}")
 
-    def get_mode(self, mode_id: str) -> Dict | None:
+    def get_mode(self, mode_id: str) -> Optional[Dict]:
         """获取模式定义"""
         return self.modes.get(mode_id)
 
