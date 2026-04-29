@@ -1,113 +1,252 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LightFrame 设备配置</title>
+    <title>LightFrame 控制中心</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <h1>LightFrame 配置</h1>
 
-    <div class="card">
-        <h2>显示模式</h2>
-        <div id="mode-list">
-            <!-- 动态加载 -->
+<body>
+    <div id="toastContainer"></div>
+
+    <div class="container">
+        <div class="card" style="padding-bottom: 24px;">
+            <h1>LightFrame</h1>
+            <p class="subtitle">智能像素光影矩阵 · 控制中心</p>
+
+            <div class="fg">
+                <label class="lbl">显示模式 (可多选)</label>
+                <div class="cg" id="mode-list">
+                    <div style="color:var(--gy);font-size:0.85rem;">加载中...</div>
+                </div>
+                <div class="hint">选中的模式将会在设备上轮播显示。</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>视觉表现</h2>
+
+            <div class="fg">
+                <div style="display: flex; justify-content: space-between;">
+                    <label class="lbl" style="margin-bottom: 0;">默认亮度</label>
+                    <span style="font-weight: 600; font-size: 0.9rem;" id="brightness-value">80%</span>
+                </div>
+                <input type="range" id="brightness" min="0" max="100" value="80">
+            </div>
+
+            <div class="fg" style="margin-top: 32px;">
+                <label class="lbl">全局配色方案</label>
+                <div class="pg" id="color-scheme" data-group="scheme">
+                    <div class="pi sel" data-v="rainbow" onclick="selectPill(this)">彩虹</div>
+                    <div class="pi" data-v="fire" onclick="selectPill(this)">火焰</div>
+                    <div class="pi" data-v="ocean" onclick="selectPill(this)">海洋</div>
+                    <div class="pi" data-v="purple" onclick="selectPill(this)">紫粉</div>
+                    <div class="pi" data-v="green" onclick="selectPill(this)">青绿</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>硬件特性</h2>
+
+            <div class="switch-row">
+                <div class="switch-info">
+                    <div class="switch-label">环境光自适应</div>
+                    <div class="hint" style="margin-top: 2px;">依赖光敏传感器自动调节亮度</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="auto-dimming" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="switch-row">
+                <div class="switch-info">
+                    <div class="switch-label">拾音频谱模式</div>
+                    <div class="hint" style="margin-top: 2px;">开启后允许麦克风捕获环境音进行律动</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="spectrum-enabled" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h2 style="border: none; margin: 0; padding: 0;">矩阵实时预览</h2>
+                <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;"
+                    onclick="refreshPreview()">抓取当前帧</button>
+            </div>
+            <div class="preview-board">
+                <div id="preview-grid">
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 16px; margin-bottom: 40px;">
+            <button class="btn btn-outline" style="flex: 1;" onclick="location.href='editor.html'">高级代码编辑</button>
+            <button class="btn btn-outline" style="flex: 1;" onclick="location.href='draw.html'">像素画板</button>
+            <button class="btn" id="save-btn" style="flex: 2;">同步配置到设备</button>
         </div>
     </div>
 
-    <div class="card">
-        <h2>亮度设置</h2>
-        <label for="brightness">默认亮度: <span id="brightness-value">80</span></label>
-        <input type="range" id="brightness" min="0" max="100" value="80" class="brightness-slider">
-    </div>
-
-    <div class="card">
-        <h2>功能设置</h2>
-        <label>
-            <input type="checkbox" id="auto-dimming" checked>
-            启用自动亮度调节（光敏传感器）
-        </label>
-        <br>
-        <label>
-            <input type="checkbox" id="spectrum-enabled" checked>
-            启用频谱模式
-        </label>
-    </div>
-
-    <div class="card">
-        <h2>配色方案</h2>
-        <select id="color-scheme">
-            <option value="rainbow">彩虹</option>
-            <option value="fire">火焰</option>
-            <option value="ocean">海洋</option>
-            <option value="purple">紫粉</option>
-            <option value="green">青绿</option>
-        </select>
-    </div>
-
-    <button id="save-btn">保存配置</button>
-    <div id="status"></div>
-
     <script>
-        const deviceMac = 'TODO'; // 设备 MAC 由配网时注入
+        const deviceMac = 'TODO'; // 设备 MAC
+        let selectedModes = [];
 
-        async function loadModes() {
-            const res = await fetch('/api/modes');
-            const data = await res.json();
-            const list = document.getElementById('mode-list');
-            data.modes.forEach(mode => {
-                const div = document.createElement('div');
-                div.className = 'mode-item';
-                div.dataset.modeId = mode.mode_id;
-                div.innerHTML = `<strong>${mode.display_name}</strong><br><small>${mode.mode_id}</small>`;
-                div.onclick = () => selectMode(mode.mode_id);
-                list.appendChild(div);
-            });
+        // Toast 通知系统
+        function showToast(msg, type = 'success') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`;
+            t.textContent = msg;
+            c.appendChild(t);
+            requestAnimationFrame(() => t.classList.add('show'));
+            setTimeout(() => {
+                t.classList.remove('show');
+                setTimeout(() => t.remove(), 300);
+            }, 3000);
         }
 
-        let selectedModes = [];
-        function selectMode(modeId) {
-            const idx = selectedModes.indexOf(modeId);
-            if (idx >= 0) {
-                selectedModes.splice(idx, 1);
-                document.querySelector(`[data-mode-id="${modeId}"]`).classList.remove('selected');
+        // 分段单选器逻辑
+        function selectPill(el) {
+            const parent = el.closest('.pg');
+            parent.querySelectorAll('.pi').forEach(p => p.classList.remove('sel'));
+            el.classList.add('sel');
+        }
+
+        // 胶囊多选器逻辑 (Modes)
+        function toggleChip(el, modeId) {
+            el.classList.toggle('sel');
+            if (el.classList.contains('sel')) {
+                if (!selectedModes.includes(modeId)) selectedModes.push(modeId);
             } else {
-                selectedModes.push(modeId);
-                document.querySelector(`[data-mode-id="${modeId}"]`).classList.add('selected');
+                selectedModes = selectedModes.filter(m => m !== modeId);
             }
         }
 
+        // 初始化加载模式列表
+        async function loadModes() {
+            try {
+                const res = await fetch('/api/modes');
+                const data = await res.json();
+                const list = document.getElementById('mode-list');
+                list.innerHTML = '';
+
+                data.modes.forEach(mode => {
+                    const chip = document.createElement('span');
+                    chip.className = 'ch'; // 默认未选中
+                    chip.textContent = mode.display_name;
+                    chip.onclick = () => toggleChip(chip, mode.mode_id);
+                    list.appendChild(chip);
+                });
+            } catch (e) {
+                document.getElementById('mode-list').innerHTML = '<div style="color:var(--red);font-size:0.85rem;">加载模式失败，请检查网络</div>';
+            }
+        }
+
+        // 亮度滑块显示
         document.getElementById('brightness').oninput = (e) => {
-            document.getElementById('brightness-value').textContent = e.target.value;
+            document.getElementById('brightness-value').textContent = e.target.value + '%';
         };
 
-        document.getElementById('save-btn').onclick = async () => {
+        // 初始化预览网格
+        const grid = document.getElementById('preview-grid');
+        const pixels = [];
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 32; x++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'preview-pixel';
+                grid.appendChild(pixel);
+                pixels.push(pixel);
+            }
+        }
+
+        // 抓取并渲染预览帧
+        async function refreshPreview() {
+            if (selectedModes.length === 0) {
+                showToast('请先选择至少一个显示模式', 'error');
+                return;
+            }
+            const mode = selectedModes[0]; // 预览选中的第一个模式
+            showToast('正在抓取帧...', 'success');
+
+            try {
+                const res = await fetch(`/api/frame?mac=preview&mode=${mode}`);
+                const buffer = await res.arrayBuffer();
+                const bytes = new Uint8Array(buffer);
+
+                for (let y = 0; y < 8; y++) {
+                    for (let x = 0; x < 32; x++) {
+                        const idx = (x * 8 + y) * 3; // 注意后端的行列逻辑
+                        if (idx + 2 < bytes.length) {
+                            const r = bytes[idx];
+                            const g = bytes[idx + 1];
+                            const b = bytes[idx + 2];
+                            const pixelIdx = y * 32 + x;
+                            const pixel = pixels[pixelIdx];
+
+                            pixel.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                            if (r > 5 || g > 5 || b > 5) {
+                                pixel.style.boxShadow = `0 0 6px rgba(${r}, ${g}, ${b}, 0.8)`;
+                                pixel.style.transform = 'scale(1.1)';
+                                pixel.style.zIndex = '1';
+                            } else {
+                                pixel.style.boxShadow = 'none';
+                                pixel.style.transform = 'scale(1)';
+                                pixel.style.zIndex = '0';
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                showToast('无法抓取预览画面', 'error');
+            }
+        }
+
+        // 保存配置
+        document.getElementById('save-btn').onclick = async (e) => {
+            const btn = e.target;
+            btn.textContent = '正在同步...';
+            btn.style.opacity = '0.7';
+
+            // 获取选中的配色方案
+            const colorScheme = document.querySelector('#color-scheme .pi.sel').dataset.v;
+
             const config = {
                 active_modes: selectedModes,
                 default_brightness: parseInt(document.getElementById('brightness').value),
                 spectrum_enabled: document.getElementById('spectrum-enabled').checked,
                 auto_dimming: document.getElementById('auto-dimming').checked,
-                color_scheme: document.getElementById('color-scheme').value
+                color_scheme: colorScheme
             };
 
-            const res = await fetch(`/api/config/${deviceMac}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(config)
-            });
-
-            const result = await res.json();
-            if (result.success) {
-                document.getElementById('status').textContent = '配置保存成功！';
-                document.getElementById('status').style.color = 'green';
-            } else {
-                document.getElementById('status').textContent = '保存失败，请重试';
-                document.getElementById('status').style.color = 'red';
+            try {
+                const res = await fetch(`/api/config/${deviceMac}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showToast('配置已成功同步到 LightFrame 硬件');
+                } else {
+                    showToast('保存失败，设备离线或拒绝请求', 'error');
+                }
+            } catch (err) {
+                showToast('网络请求超时', 'error');
+            } finally {
+                btn.textContent = '同步配置到设备';
+                btn.style.opacity = '1';
             }
         };
 
+        // 页面启动
         loadModes();
     </script>
 </body>
+
 </html>

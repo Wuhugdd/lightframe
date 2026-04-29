@@ -1,17 +1,53 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LightFrame 自定义模式编辑器</title>
+    <title>LightFrame - 模式编辑器</title>
     <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1>自定义模式编辑器</h1>
 
-    <div class="card">
-        <h2>JSON 模式定义</h2>
-        <textarea id="json-editor" rows="20" style="width: 100%; font-family: monospace;">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <style>
+        /* 覆盖 CodeMirror 默认边框，融入我们的卡片设计 */
+        .CodeMirror {
+            border: 1px solid var(--bd);
+            border-radius: 12px;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            height: 450px;
+            font-size: 14px;
+            background: var(--bg);
+            padding: 8px 0;
+            transition: border-color 0.2s;
+        }
+
+        .CodeMirror-focused {
+            border-color: var(--bk);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="toastContainer"></div>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <button class="btn btn-outline" style="padding: 8px 16px;" onclick="location.href='config.html'">
+                ← 返回控制中心
+            </button>
+            <h2 style="margin: 0; border: none; font-size: 1rem; color: var(--gy);">开发者模式</h2>
+        </div>
+
+        <div class="card">
+            <h1>自定义模式编辑器</h1>
+            <p class="subtitle">通过 JSON 编写完全属于你的光影矩阵模式</p>
+
+            <div class="fg">
+                <div style="display: flex; justify-content: space-between;">
+                    <label class="lbl">JSON 模式定义 (Mode Definition)</label>
+                    <span style="font-size: 0.75rem; color: var(--green);" id="json-status">格式有效 ✓</span>
+                </div>
+                <textarea id="json-editor" style="display: none;">
 {
   "mode_id": "my_custom_mode",
   "display_name": "我的自定义模式",
@@ -24,37 +60,85 @@
     "color": "#ffffff"
   }
 }
-        </textarea>
+                </textarea>
+            </div>
+
+            <div class="fg">
+                <label class="lbl">参数速查手册</label>
+                <div class="pg"
+                    style="flex-direction: column; gap: 4px; padding: 12px; background: #fafaf7; text-align: left;">
+                    <div style="font-size: 0.8rem; color: var(--gy);"><strong>mode_id</strong>: 模式唯一标识符 (大写英文字母)</div>
+                    <div style="font-size: 0.8rem; color: var(--gy);"><strong>display_name</strong>: UI 面板上显示的友好名称</div>
+                    <div style="font-size: 0.8rem; color: var(--gy);"><strong>content.type</strong>: time /
+                        spectrum_only / text / computed</div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 32px;">
+                <button class="btn" id="save-btn" style="min-width: 120px;">校验并保存</button>
+            </div>
+        </div>
     </div>
 
-    <button id="save-btn">保存自定义模式</button>
-    <div id="status"></div>
-
-    <div class="card">
-        <h3>模式说明</h3>
-        <ul>
-            <li><strong>mode_id</strong> - 模式ID，唯一标识符</li>
-            <li><strong>display_name</strong> - 显示名称</li>
-            <li><strong>cacheable</strong> - 是否可缓存（静态内容设为 true）</li>
-            <li><strong>content.type</strong> - 类型：time / spectrum_only / text / computed</li>
-            <li><strong>layout</strong> - 布局配置，根据类型不同</li>
-        </ul>
-    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
 
     <script>
+        // 初始化专业代码编辑器
+        const textarea = document.getElementById('json-editor');
+        const statusEl = document.getElementById('json-status');
+
+        const editor = CodeMirror.fromTextArea(textarea, {
+            mode: "application/json",
+            lineNumbers: true,
+            matchBrackets: true,
+            autoCloseBrackets: true,
+            tabSize: 2
+        });
+
+        // 实时 JSON 格式校验
+        editor.on('change', () => {
+            try {
+                JSON.parse(editor.getValue());
+                statusEl.textContent = '格式有效 ✓';
+                statusEl.style.color = 'var(--green)';
+            } catch (e) {
+                statusEl.textContent = '格式错误 ✗';
+                statusEl.style.color = 'var(--red)';
+            }
+        });
+
+        // 统一的 Toast 提示
+        function showToast(msg, type = 'success') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`;
+            t.textContent = msg;
+            c.appendChild(t);
+            requestAnimationFrame(() => t.classList.add('show'));
+            setTimeout(() => {
+                t.classList.remove('show');
+                setTimeout(() => t.remove(), 300);
+            }, 3000);
+        }
+
         document.getElementById('save-btn').onclick = async () => {
             try {
-                const json = JSON.parse(document.getElementById('json-editor').value.trim());
+                // 强制校验格式
+                const jsonText = editor.getValue().trim();
+                const json = JSON.parse(jsonText);
                 const modeId = json.mode_id;
 
-                // TODO: 后端 API 保存自定义模式
-                document.getElementById('status').textContent = `模式 ${modeId} 保存成功！`;
-                document.getElementById('status').style.color = 'green';
+                if (!modeId) throw new Error("缺少必要的 mode_id 字段");
+
+                // 发送保存请求 (TODO: 对接你真实的后端接口)
+                showToast(`自定义模式 [${modeId}] 已保存并生效`, 'success');
+
             } catch (e) {
-                document.getElementById('status').textContent = 'JSON 格式错误: ' + e.message;
-                document.getElementById('status').color = 'red';
+                showToast('保存失败: ' + e.message, 'error');
             }
         };
     </script>
 </body>
+
 </html>

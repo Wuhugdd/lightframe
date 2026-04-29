@@ -6,6 +6,9 @@ FastAPI 入口 + API 端点
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List
 from dotenv import load_dotenv
 import os
 import sys
@@ -24,6 +27,21 @@ load_dotenv()
 
 # 初始化组件
 app = FastAPI(title="LightFrame Backend", version="1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 画板帧缓存：mac -> bytes
+_draw_frame_cache: dict = {}
+
+
+class DrawRequest(BaseModel):
+    mac: str
+    pixels: List[List[int]]  # 256 个元素，每个 [R, G, B]
 
 db_path = os.getenv("DATABASE_PATH", "./lightframe.db")
 config_store = ConfigStore(db_path)
@@ -79,8 +97,37 @@ async def get_frame(mac: str, mode: str):
 
     返回 8*32*3 = 768 字节二进制数据
     """
+    # 画板模式：直接返回缓存的画板帧
+    if mode == "DRAW":
+        cached = _draw_frame_cache.get(mac)
+        if cached:
+            return Response(content=cached, media_type="application/octet-stream")
+        # 无缓存返回黑帧
+        return Response(content=bytes(768), media_type="application/octet-stream")
+
     frame_bytes = pipeline.render_frame(mac, mode)
     return Response(content=frame_bytes, media_type="application/octet-stream")
+
+
+@app.post("/api/draw")
+async def push_draw_frame(req: DrawRequest):
+    """接收画板像素数组，缓存并返回给 ESP32
+
+    pixels: 256 个 [R,G,B]，顺序为行优先 (y*32+x)
+    """
+    if len(req.pixels) != 256:
+        raise HTTPException(status_code=400, detail="pixels 必须包含 256 个元素")
+
+    data = bytearray()
+    for px in req.pixels:
+        if len(px) != 3:
+            raise HTTPException(status_code=400, detail="每个像素必须是 [R,G,B]")
+        data.append(max(0, min(255, px[0])))
+        data.append(max(0, min(255, px[1])))
+        data.append(max(0, min(255, px[2])))
+
+    _draw_frame_cache[req.mac] = bytes(data)
+    return {"success": True, "mac": req.mac}
 
 
 # 挂载静态网页文件

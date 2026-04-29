@@ -21,13 +21,22 @@
 // 光敏电阻
 #define LIGHT_PIN       33
 
-// 按键
-#define BUTTON_MODE     25  // 模式切换 - 短按切换模式，长按进入配网
-#define BUTTON_BRIGHT   26  // 亮度调节
-#define BUTTON_CONFIRM  27  // 确认
+// 按键（内部上拉，低电平触发）
+#define BUTTON_MODE     25  // 短按切换模式，长按进入配网
+#define BUTTON_BRIGHT   26  // 短按亮度+，长按亮度-，双击切换自动调光
+#define BUTTON_CONFIRM  27  // 短按确认，长按保存，双击快速关灯
 
 // 蜂鸣器
 #define BUZZER_PIN      22
+
+// 电池电量检测（ADC，仅输入引脚）
+// 分压电路：电池+ → 100kΩ → GPIO34 → 100kΩ → GND
+// 实测电压 = ADC读值 / 4095.0 * 3.3 * 2.0
+#define BATTERY_PIN     34
+#define BATTERY_R1      100000  // 上分压电阻 100kΩ
+#define BATTERY_R2      100000  // 下分压电阻 100kΩ
+#define BATTERY_FULL_V  4200    // 满电 4200mV
+#define BATTERY_EMPTY_V 3000    // 截止 3000mV
 
 // ========== 系统配置 ==========
 
