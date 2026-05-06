@@ -1,10 +1,8 @@
 # Light Frame · 光帧
 
-<div align="center">
-
 A smart WS2812 music clock that truly belongs on your desk — watch the spectrum dance to your music during the day, check the time at a glance, and enjoy the vibe at night.
 
-**[中文介绍](README_ZH.md) | [Hardware Guide](docs/hardware.md) | [Setup Tutorial](docs/setup.md)**
+[**中文介绍**](README_ZH.md) | [**Hardware Guide**](docs/hardware.md) | [**Setup Tutorial**](docs/setup.md)
 
 ---
 
@@ -62,7 +60,7 @@ A smart WS2812 music clock that truly belongs on your desk — watch the spectru
 │  └─────────────┘            └──────────────────┘         │
 └─────────────────────────────────────────────────────────┘
                           ↑
-                          │ HTTP (GET /api/frame)
+                      HTTP (GET /api/frame)
                           ↓
 ┌─────────────────────────────────────────────────────────┐
 │                    ESP32-S3 (Device)                      │
@@ -124,25 +122,25 @@ python -m uvicorn api.index:app --host 0.0.0.0 --port 8080
 
 ```
 lightframe/
-├── README.md              # English intro
-├── README_ZH.md           # Chinese intro
-├── .gitignore             # Git ignore rules
-├── firmware/              # ESP32-S3 firmware (PlatformIO)
-│   ├── src/               # Source code by module
-│   └── platformio.ini     # Board config & dependencies
-├── backend/               # Python FastAPI backend
-│   ├── api/index.py       # FastAPI entry + API endpoints
-│   ├── core/              # Core modules (renderer, config, etc.)
-│   ├── modes/             # Mode definitions (builtin + custom)
+├── README.md              English intro
+├── README_ZH.md           Chinese intro
+├── .gitignore
+├── firmware/              ESP32-S3 firmware (PlatformIO)
+│   ├── src/               Source code by module
+│   └── platformio.ini
+├── backend/               Python FastAPI backend
+│   ├── api/index.py       Entry + API endpoints
+│   ├── core/              Renderer, config, registry
+│   ├── modes/             Builtin + custom modes
 │   └── requirements.txt
-├── webconfig/             # Static web config pages
-│   ├── config.html        # Device configuration
-│   ├── preview.html       # Online preview
-│   ├── editor.html        # Custom mode editor
+├── webconfig/             Static web config pages
+│   ├── config.html
+│   ├── preview.html
+│   ├── editor.html
 │   └── style.css
 └── docs/
-    ├── hardware.md        # BOM + wiring
-    └── setup.md           # Detailed setup tutorial
+    ├── hardware.md        BOM + wiring
+    └── setup.md           Deployment tutorial
 ```
 
 ---

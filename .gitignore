@@ -41,5 +41,10 @@ lightframe.db
 .DS_Store
 Thumbs.db
 
+# Project notes (personal, not for distribution)
+PROJECT_PLAN*.md
+SESSION_SUMMARY*.md
+*.pdf
+
 # Claude
 .claude/
